@@ -60,3 +60,12 @@ test('write returns false rather than throwing when the dir is unwritable', () =
   assert.equal(writeState('x', { character: 'leonardo' }), false);
   process.env.PERSONALITY_STATE_DIR = dir;
 });
+
+test('re-writing a state object under a new id does not keep the old session_id', () => {
+  // Regression: writeState spread `data` after session_id, so a state object
+  // read from another key silently carried its old session_id forward.
+  writeState('first-id', { universe: 'tmnt', character: 'leonardo' });
+  const carried = readState('first-id');
+  writeState('second-id', carried);
+  assert.equal(readState('second-id').session_id, 'second-id');
+});

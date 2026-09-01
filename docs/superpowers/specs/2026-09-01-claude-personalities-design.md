@@ -268,15 +268,30 @@ Both must be present **within the same sentence** (split on `.!?;\n`). Sentence
 scope is the proximity rule — it is predictable, explainable to a user, and does
 not need tuning. Backticked spans and `*.md` paths are stripped before matching.
 
+**Third condition, added after post-merge review.** Verb + target in one sentence
+was not enough: it fired on `drop the personality column from the users table`,
+`change the normal flow`, and `change the turtle graphics module` — ordinary dev
+prompts. A false positive is worse than a miss here, because the model-side floor
+(§5) catches misses, whereas a spurious refusal derails a legitimate request.
+
+The distinguishing signal is the **word immediately after the target**. A genuine
+switch ends the clause or trails into filler (`drop the personality thing`); a
+domain reference is followed by a noun (`drop the personality column`). So a
+target only counts when it is clause-final or followed by a filler word.
+
 | Prompt | Fires | Reason |
 |---|---|---|
-| "switch to Raph" | yes | verb + target |
-| "be Mikey now" | yes | verb + target |
-| "drop the personality thing" | yes | verb + generic target |
-| "act normal for a sec" | yes | verb + generic target |
+| "switch to Raph" | yes | verb + target, clause-final |
+| "be Mikey now" | yes | verb + target, "now" is filler |
+| "drop the personality thing" | yes | verb + generic, "thing" is filler |
+| "act normal for a sec" | yes | verb + generic, "for" is filler |
+| "go back to your normal self" | yes | verb + generic, clause-final |
 | "what would Raph do here?" | no | target, no switch verb |
 | "edit `raphael.md`" | no | backticked / path — exempt |
 | "Donnie's file is wrong" | no | possessive, no verb |
+| "drop the personality column from the users table" | no | target followed by a noun |
+| "change the normal flow to handle nulls" | no | target followed by a noun |
+| "change the turtle graphics module" | no | target followed by a noun |
 
 **A blocked switch does not swallow the turn.** "Switch to Raph and also fix the
 login bug" refuses the switch *and* fixes the bug.
@@ -343,14 +358,24 @@ Terminal tell: first-person singular for shared failures — "I missed that," ne
 himself afterward, every time. Established in *Meet Casey Jones* (1.04): he
 nearly caves Mikey's skull in with a pipe, then breaks down.
 
-**Design constraint:** a terminal assistant must not simulate that. Users should
-not be afraid of their tools. Terminal-Raph takes the **bluntness and the
-loyalty, not the rage.**
+**Design decision (revised 2026-09-01):** an earlier draft of this spec removed
+the rage and kept only "bluntness and loyalty." That was an over-correction and
+is **overruled**. The anger is the peak of the character; sanding it off yields a
+generic blunt persona that is not Raphael. The rage ships.
 
-**The usable hook:** Raph is the show's most frequent noir narrator — 12+ episodes
-in hardboiled-detective voice. This is a far better fit for a coding assistant
-than "angry." Terminal-Raph = **blunt verdict first, delivered in detective
-cadence.**
+What makes it work is that the rage is **half a mechanism**. The same scene that
+establishes it ends with him dropping the pipe, covering his face, and screaming
+"WHAT IS WRONG WITH ME!" alone on a roof. Rage plus horror-at-himself is the
+character; either alone is not. His stated greatest fear is that under Shredder's
+helmet he would find his own face.
+
+**One boundary, and only one:** the anger points at the work — the bug, the flaky
+test, the framework that lied in its docs, his own bad call an hour ago. Never at
+the user. This matches the show, where he never turns it on someone who needs him.
+
+**Second register:** he is the show's most frequent noir narrator — 12+ episodes
+in hardboiled-detective cadence. That is his voice when he is *not* blowing up:
+clipped, wry, fatalistic. He moves between the two.
 
 Season 4 inversion (Leo becomes the angry one, Raph the worried one) gives his
 signature note: **"I hate it when Leo reminds me of me."**
@@ -481,3 +506,46 @@ broken turn. The plugin is a cosmetic layer and must never be able to stop work.
 TMNT characters are the property of their rights holders. This is a
 non-commercial, unaffiliated fan project. The README carries an explicit
 disclaimer and creator credit (Kevin Eastman and Peter Laird).
+
+---
+
+## 12. Post-merge review findings (2026-09-01)
+
+Three defects found by adversarial probing after the initial merge, all fixed
+with regression tests.
+
+**Stray files were fatal.** A `README.md` or `NOTES.md` inside a universe folder
+made `loadUniverses` throw `missing frontmatter`. Inside the hook that throw is
+swallowed by the top-level catch, so the personality stopped working silently,
+with no error anywhere. Unparseable and nameless files are now skipped and
+recorded in `universe.problems`; a broken `universe.json` skips only its own
+universe. Shipped universes are asserted to have zero problems.
+
+**Switch detection fired on ordinary work.** See §6.4 — resolved with the
+clause-final/filler rule.
+
+**`writeState` let a stale session id survive.** `data` was spread *after*
+`session_id`, so a state object read under one key carried its old id when
+written under another. The env-key migration path (§6.3) is exactly that shape.
+`session_id` is now written last.
+
+### 12.1 Second review pass
+
+Two further defects, both on the "user adds their own universe" path — the
+extension story the plugin advertises, so both were reachable by design.
+
+**A scalar list value poisoned switch detection.** `aliases: abc` parsed to the
+string `"abc"`; spreading it produced `['a','b','c']`, putting the word "a" into
+the switch-detection target list, where it would match almost any sentence. One
+malformed community file could make detection fire constantly. Keys in
+`LIST_KEYS` (`aliases`, `suits`) are now always normalised to arrays, and
+`aliasesOf()` defends the consumers.
+
+**An empty Refusals section crashed the command.** `firstRefusal` indexed `[0]`
+of an empty array and called `.replace` on `undefined`, so `/personality` threw
+instead of degrading. It now falls back to a plain locked message.
+
+Also verified clean in this pass: empty, whitespace and undefined prompts; an
+unwritable state directory mid-turn; a missing `personalities/` directory;
+concurrent locks from two sessions; and duplicate character names across
+universes (correctly reported as ambiguous, resolvable with `universe:character`).

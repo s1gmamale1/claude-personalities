@@ -76,3 +76,59 @@ test('resolveName honours universe:character syntax', () => {
   const u = loadUniverses(FIXTURES);
   assert.equal(resolveName(u, 'testverse:tester').character.meta.name, 'tester');
 });
+
+test('a stray non-character .md does not take down the universe', async () => {
+  // Regression: a README.md or NOTES.md in a universe folder threw
+  // "missing frontmatter". Inside the hook that throw is swallowed, so the
+  // personality silently stopped working with no error anywhere.
+  const { mkdtempSync, cpSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  const tmp = mkdtempSync(join(tmpdir(), 'stray-'));
+  cpSync(FIXTURES, tmp, { recursive: true });
+  writeFileSync(join(tmp, 'testverse', 'NOTES.md'), '# notes for contributors\n');
+  writeFileSync(join(tmp, 'testverse', 'nameless.md'), '---\ndisplay: X\n---\n## Voice\nv\n');
+
+  const universes = loadUniverses(tmp);
+  assert.ok(universes.has('testverse'), 'universe must still load');
+  assert.ok(universes.get('testverse').characters.has('tester'));
+  assert.equal(universes.get('testverse').characters.size, 1);
+  assert.equal(universes.get('testverse').problems.length, 2, 'both bad files reported');
+});
+
+test('a broken universe.json skips only that universe', async () => {
+  const { mkdtempSync, cpSync, mkdirSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  const tmp = mkdtempSync(join(tmpdir(), 'brokenverse-'));
+  cpSync(FIXTURES, tmp, { recursive: true });
+  mkdirSync(join(tmp, 'busted'));
+  writeFileSync(join(tmp, 'busted', 'universe.json'), '{ not json');
+
+  const universes = loadUniverses(tmp);
+  assert.ok(universes.has('testverse'), 'good universe still loads');
+  assert.ok(!universes.has('busted'));
+});
+
+test('a scalar aliases value is normalised to an array, not spread into letters', () => {
+  // Regression: `aliases: abc` parsed to the string "abc", and spreading it gave
+  // ['a','b','c'] — putting the word "a" into the switch-detection target list.
+  const { meta } = parseFrontmatter('---\nname: x\naliases: abc\nsuits: solo\n---\nbody\n');
+  assert.deepEqual(meta.aliases, ['abc']);
+  assert.deepEqual(meta.suits, ['solo']);
+});
+
+test('an absent list value becomes an empty array', () => {
+  const { meta } = parseFrontmatter('---\nname: x\naliases:\n---\nbody\n');
+  assert.deepEqual(meta.aliases, []);
+});
+
+test('aliasesOf tolerates junk without producing junk targets', async () => {
+  const { aliasesOf } = await import('../lib/characters.mjs');
+  assert.deepEqual(aliasesOf({ meta: { aliases: 'abc' } }), []);
+  assert.deepEqual(aliasesOf({ meta: { aliases: ['ok', '', '  ', 7] } }), ['ok']);
+  assert.deepEqual(aliasesOf({ meta: {} }), []);
+  assert.deepEqual(aliasesOf(undefined), []);
+});

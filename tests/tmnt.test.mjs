@@ -56,3 +56,11 @@ test('character aliases are unique across the universe', () => {
     }
   }
 });
+
+test('shipped universes load with zero problems', () => {
+  // `problems` collects files that failed to parse. Shipped content must be clean,
+  // otherwise a character silently disappears from the roster.
+  for (const [id, u] of universes) {
+    assert.deepEqual(u.problems, [], `${id} reported load problems`);
+  }
+});
