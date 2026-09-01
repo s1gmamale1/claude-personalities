@@ -19,3 +19,9 @@
 .cursor/
 ruvector.db
 .claude/settings.local.json
+
+# Local tooling config, not part of the published plugin
+.claude/
+.mcp.json
+AGENTS.md
+CLAUDE.md
