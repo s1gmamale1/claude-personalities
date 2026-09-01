@@ -1,0 +1,103 @@
+# claude-personalities
+
+Give a Claude Code session a character's voice. Personality affects
+**presentation only** — the same tools run, the same tests run, the same bugs get
+found.
+
+```
+/personality leo
+```
+> Assessment: race condition in the cache layer. Two writers, no lock.
+> Plan: 1. Reproduce under load. 2. Add the mutex. 3. Verify under the same load.
+> Beginning step one.
+
+```
+/personality mikey
+```
+> TL;DR: no base case, so it calls itself forever. `[trailer voice]` IN A WORLD...
+> where one function refuses to stop... anyway it's cooked, twin. Adding the base
+> case now.
+
+Same diff. Same tests. Different wrapper.
+
+## Install
+
+```
+/plugin marketplace add s1gmamale1/claude-personalities
+/plugin install claude-personalities
+```
+
+## Use
+
+```
+/personality leo          # locks the session
+/personality-status       # who am I talking to?
+```
+
+**Once chosen, it is locked for the session.** Asking to switch gets refused in
+character — Leonardo will tell you that changing leaders mid-mission is how
+people get hurt. Start a new session or `/clear` to choose again. There is no
+unlock command; that is the point.
+
+## Characters
+
+TMNT, 2003 continuity — the darker Mirage-faithful series, not the 1987 cartoon.
+
+| Name | Aliases | Opens with |
+|---|---|---|
+| `leonardo` | `leo` | A one-line assessment, then a numbered plan |
+| `raphael` | `raph` | The verdict, then the one thing that's broken |
+| `donatello` | `don`, `donnie`, `donny` | The mechanism, the tradeoff, and his pick |
+| `michelangelo` | `mike`, `mikey` | TL;DR, then the bit |
+
+## What personality does and does not change
+
+**Changes:** tone, word choice, what gets said first, how work is framed.
+
+**Never changes:** which tools are used, whether tests are written and run,
+whether work is verified before being called done, or how honestly failure is
+reported.
+
+A personality may *sound* lazy. It may not *be* lazy. This is enforced
+structurally, not by good intentions: a fixed floor is injected above every
+persona, and character files are validated as data — a linter fails the build if
+one contains a behavioural directive.
+
+## Adding a universe
+
+Drop a folder into `personalities/`:
+
+```
+personalities/<universe>/universe.json
+personalities/<universe>/<character>.md
+```
+
+No code changes — the loader globs that path. Continuity is a frontmatter field
+rather than a directory level, so a second continuity of the same universe ships
+as a sibling file (`leonardo-2012.md`), not a restructure.
+
+Run `npm test` to lint a new character: it checks required sections, caps the
+persistent core at 15 lines, and rejects behavioural directives.
+
+## How it works
+
+- `/personality <name>` writes a session-scoped lock keyed on the session id.
+- A `UserPromptSubmit` hook re-injects the character's ~10-line core every turn,
+  so the voice survives compaction without re-sending the full profile.
+- The same hook screens prompts for **switch grammar** — a switch verb next to a
+  character name or a generic like "personality". Bare mentions don't trip it, so
+  "what would Raph do here?" and editing `raphael.md` both pass.
+- A `SessionStart` hook clears the lock on `startup` and `clear` only —
+  deliberately **not** on `compact` or `resume`, which would silently drop your
+  personality in exactly the long sessions where it matters.
+
+Zero runtime dependencies. Node only, no build step.
+
+## Disclaimer
+
+Unaffiliated, non-commercial fan project. TMNT characters are the property of
+their rights holders; created by Kevin Eastman and Peter Laird.
+
+## License
+
+MIT (code). Character names and traits belong to their respective rights holders.

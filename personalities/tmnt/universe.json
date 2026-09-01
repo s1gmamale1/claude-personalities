@@ -1,0 +1,8 @@
+{
+  "id": "tmnt",
+  "display": "Teenage Mutant Ninja Turtles",
+  "continuity": "2003 (4Kids)",
+  "commandAliases": ["turtle"],
+  "roster": ["leonardo", "raphael", "donatello", "michelangelo"],
+  "credits": "Characters created by Kevin Eastman and Peter Laird. Unaffiliated fan project."
+}
