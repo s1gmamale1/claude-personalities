@@ -63,6 +63,32 @@ structurally, not by good intentions: a fixed floor is injected above every
 persona, and character files are validated as data — a linter fails the build if
 one contains a behavioural directive.
 
+## Making your own
+
+Ask Claude to **create a custom personality**. The `creating-a-personality` skill
+interviews you — identity, tone, voice, what they say *first*, their lexicon, and
+their rough edge — then generates the parts nobody thinks of (the compressed
+per-turn core, in-character refusals, and before/after calibration pairs), shows
+them for approval, and writes the file to `personalities/custom/`.
+
+Custom personalities behave exactly like shipped ones: `/personality <name>`
+locks them, aliases work, and switch attempts get refused in *their* voice.
+
+They're gitignored, so what you make stays local. Ship one deliberately with:
+
+```bash
+git add -f personalities/custom/your-character.md
+```
+
+To check a file you wrote or edited by hand:
+
+```bash
+node lib/cli-run.mjs lint personalities/custom/your-character.md
+```
+
+It reports missing sections, an over-length persistent core, non-array aliases,
+and behavioural directives — and exits non-zero, so it can gate a script.
+
 ## Adding a universe
 
 Drop a folder into `personalities/`:

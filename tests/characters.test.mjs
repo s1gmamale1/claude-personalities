@@ -87,7 +87,7 @@ test('a stray non-character .md does not take down the universe', async () => {
 
   const tmp = mkdtempSync(join(tmpdir(), 'stray-'));
   cpSync(FIXTURES, tmp, { recursive: true });
-  writeFileSync(join(tmp, 'testverse', 'NOTES.md'), '# notes for contributors\n');
+  writeFileSync(join(tmp, 'testverse', 'stray-file.md'), '# not a character and not a known doc name\n');
   writeFileSync(join(tmp, 'testverse', 'nameless.md'), '---\ndisplay: X\n---\n## Voice\nv\n');
 
   const universes = loadUniverses(tmp);
@@ -131,4 +131,28 @@ test('aliasesOf tolerates junk without producing junk targets', async () => {
   assert.deepEqual(aliasesOf({ meta: { aliases: ['ok', '', '  ', 7] } }), ['ok']);
   assert.deepEqual(aliasesOf({ meta: {} }), []);
   assert.deepEqual(aliasesOf(undefined), []);
+});
+
+test('README and template files in a universe folder are skipped silently', async () => {
+  // A universe folder legitimately carries docs. Unlike a stray file these are
+  // expected, so they must not land in `problems`.
+  const { mkdtempSync, cpSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  const tmp = mkdtempSync(join(tmpdir(), 'docs-'));
+  cpSync(FIXTURES, tmp, { recursive: true });
+  for (const f of ['README.md', 'NOTES.md', 'TEMPLATE.md', '_scratch.md']) {
+    writeFileSync(join(tmp, 'testverse', f), '# not a character\n');
+  }
+  const u = loadUniverses(tmp).get('testverse');
+  assert.equal(u.characters.size, 1);
+  assert.deepEqual(u.problems, [], 'documentation files must not be reported');
+});
+
+test('the custom universe ships empty and clean', () => {
+  const root = fileURLToPath(new URL('../personalities/', import.meta.url));
+  const custom = loadUniverses(root).get('custom');
+  assert.ok(custom, 'custom universe must exist so users have somewhere to write');
+  assert.deepEqual(custom.problems, []);
 });

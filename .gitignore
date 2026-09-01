@@ -25,3 +25,7 @@ ruvector.db
 .mcp.json
 AGENTS.md
 CLAUDE.md
+
+# Custom personalities are personal — track them deliberately with `git add -f`
+personalities/custom/*.md
+!personalities/custom/README.md
