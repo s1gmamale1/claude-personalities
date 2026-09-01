@@ -1,0 +1,8 @@
+{
+  "id": "testverse",
+  "display": "Test Universe",
+  "continuity": "n/a",
+  "commandAliases": ["tester"],
+  "roster": ["tester"],
+  "credits": "Fixture only."
+}
