@@ -45,3 +45,23 @@ test('stripExempt removes backticked spans and .md paths', () => {
 test('matching is case-insensitive', () => {
   assert.ok(fires('SWITCH TO RAPH'));
 });
+
+test('does not fire on domain nouns that happen to be targets', () => {
+  // Regression: "drop the personality column" injected a spurious refusal into
+  // ordinary work. False positives are worse than misses here, because the
+  // model-side floor catches misses but a bad refusal derails a real request.
+  assert.ok(!fires('drop the personality column from the users table'));
+  assert.ok(!fires('change the normal flow to handle nulls'));
+  assert.ok(!fires('we need to be normal about error handling here'));
+  assert.ok(!fires('change the turtle graphics module'));
+  assert.ok(!fires('the persona field in the DB should be nullable'));
+  assert.ok(!fires('act on the normal path first'));
+});
+
+test('still fires when the target trails into filler or ends the clause', () => {
+  assert.ok(fires('drop the personality thing'));
+  assert.ok(fires('drop the personality'));
+  assert.ok(fires('be Mikey now'));
+  assert.ok(fires('act normal for a sec'));
+  assert.ok(fires('switch to Raph instead'));
+});
