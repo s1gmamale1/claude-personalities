@@ -1318,6 +1318,18 @@ test('SessionStart does NOT clear the lock on compact or resume', async () => {
   assert.ok(readState('keep'), 'lock must survive resume');
 });
 
+test('adopts an env-keyed lock when the stdin session id differs', async () => {
+  const { readState } = await import('../lib/state.mjs');
+  writeState('env-keyed-id', { universe: 'tmnt', character: 'donatello', turns: 0 });
+  const out = run(
+    { session_id: 'stdin-id', hook_event_name: 'UserPromptSubmit', prompt: 'hi' },
+    { CLAUDE_CODE_SESSION_ID: 'env-keyed-id' },
+  );
+  assert.match(JSON.parse(out).hookSpecificOutput.additionalContext, /Donatello/);
+  assert.equal(readState('env-keyed-id'), null, 'old key should be cleared');
+  assert.ok(readState('stdin-id'), 'lock should be migrated to the stdin id');
+});
+
 test('malformed stdin exits 0 with no output', () => {
   const out = execFileSync('node', [GUARD], { input: 'not json', encoding: 'utf8' });
   assert.equal(out.trim(), '');
@@ -1372,7 +1384,19 @@ function main() {
 
   if (input.hook_event_name !== 'UserPromptSubmit') return;
 
-  const state = readState(input.session_id);
+  // Commands key the lock on CLAUDE_CODE_SESSION_ID; hooks are authoritative and
+  // key on the stdin session_id. They normally match. If they ever don't, adopt
+  // the env-keyed lock once rather than failing silently.
+  let state = readState(input.session_id);
+  const envId = process.env.CLAUDE_CODE_SESSION_ID;
+  if (!state && envId && envId !== input.session_id) {
+    const migrated = readState(envId);
+    if (migrated) {
+      clearState(envId);
+      writeState(input.session_id, migrated);
+      state = migrated;
+    }
+  }
   if (!state) return;                                   // inert by default
 
   const universes = loadUniverses(join(ROOT, 'personalities'));
@@ -1599,7 +1623,7 @@ Lock this session into the personality named in `$ARGUMENTS`.
 Run this, substituting the current session id:
 
 ```bash
-node -e "import('${CLAUDE_PLUGIN_ROOT}/lib/cli.mjs').then(m=>console.log(JSON.stringify(m.lockOrRefuse({sessionId:process.argv[1],query:process.argv[2],root:'${CLAUDE_PLUGIN_ROOT}'}))))" "$SESSION_ID" "$ARGUMENTS"
+node -e "import('${CLAUDE_PLUGIN_ROOT}/lib/cli.mjs').then(m=>console.log(JSON.stringify(m.lockOrRefuse({sessionId:process.argv[1],query:process.argv[2],root:'${CLAUDE_PLUGIN_ROOT}'}))))" "$CLAUDE_CODE_SESSION_ID" "$ARGUMENTS"
 ```
 
 Then:
@@ -1624,7 +1648,7 @@ Report the active personality. This is a read-only query and is never a switch
 attempt.
 
 ```bash
-node -e "import('${CLAUDE_PLUGIN_ROOT}/lib/cli.mjs').then(m=>console.log(JSON.stringify(m.status(process.argv[1]))))" "$SESSION_ID"
+node -e "import('${CLAUDE_PLUGIN_ROOT}/lib/cli.mjs').then(m=>console.log(JSON.stringify(m.status(process.argv[1]))))" "$CLAUDE_CODE_SESSION_ID"
 ```
 
 If `locked` is false, say no personality is active and list what is available.
