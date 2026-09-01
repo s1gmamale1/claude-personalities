@@ -1,0 +1,21 @@
+# Ruflo local secrets and runtime data
+.env
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+
+# Codex local configuration
+.codex/
+# Claude Flow runtime data
+# Environment variables
+
+# Local agent/runtime state — not part of the plugin
+.swarm/
+.agents/
+.sigmamemory/
+.claude-flow/
+.cursor/
+ruvector.db
+.claude/settings.local.json
