@@ -268,15 +268,30 @@ Both must be present **within the same sentence** (split on `.!?;\n`). Sentence
 scope is the proximity rule — it is predictable, explainable to a user, and does
 not need tuning. Backticked spans and `*.md` paths are stripped before matching.
 
+**Third condition, added after post-merge review.** Verb + target in one sentence
+was not enough: it fired on `drop the personality column from the users table`,
+`change the normal flow`, and `change the turtle graphics module` — ordinary dev
+prompts. A false positive is worse than a miss here, because the model-side floor
+(§5) catches misses, whereas a spurious refusal derails a legitimate request.
+
+The distinguishing signal is the **word immediately after the target**. A genuine
+switch ends the clause or trails into filler (`drop the personality thing`); a
+domain reference is followed by a noun (`drop the personality column`). So a
+target only counts when it is clause-final or followed by a filler word.
+
 | Prompt | Fires | Reason |
 |---|---|---|
-| "switch to Raph" | yes | verb + target |
-| "be Mikey now" | yes | verb + target |
-| "drop the personality thing" | yes | verb + generic target |
-| "act normal for a sec" | yes | verb + generic target |
+| "switch to Raph" | yes | verb + target, clause-final |
+| "be Mikey now" | yes | verb + target, "now" is filler |
+| "drop the personality thing" | yes | verb + generic, "thing" is filler |
+| "act normal for a sec" | yes | verb + generic, "for" is filler |
+| "go back to your normal self" | yes | verb + generic, clause-final |
 | "what would Raph do here?" | no | target, no switch verb |
 | "edit `raphael.md`" | no | backticked / path — exempt |
 | "Donnie's file is wrong" | no | possessive, no verb |
+| "drop the personality column from the users table" | no | target followed by a noun |
+| "change the normal flow to handle nulls" | no | target followed by a noun |
+| "change the turtle graphics module" | no | target followed by a noun |
 
 **A blocked switch does not swallow the turn.** "Switch to Raph and also fix the
 login bug" refuses the switch *and* fixes the bug.
@@ -491,3 +506,25 @@ broken turn. The plugin is a cosmetic layer and must never be able to stop work.
 TMNT characters are the property of their rights holders. This is a
 non-commercial, unaffiliated fan project. The README carries an explicit
 disclaimer and creator credit (Kevin Eastman and Peter Laird).
+
+---
+
+## 12. Post-merge review findings (2026-09-01)
+
+Three defects found by adversarial probing after the initial merge, all fixed
+with regression tests.
+
+**Stray files were fatal.** A `README.md` or `NOTES.md` inside a universe folder
+made `loadUniverses` throw `missing frontmatter`. Inside the hook that throw is
+swallowed by the top-level catch, so the personality stopped working silently,
+with no error anywhere. Unparseable and nameless files are now skipped and
+recorded in `universe.problems`; a broken `universe.json` skips only its own
+universe. Shipped universes are asserted to have zero problems.
+
+**Switch detection fired on ordinary work.** See §6.4 — resolved with the
+clause-final/filler rule.
+
+**`writeState` let a stale session id survive.** `data` was spread *after*
+`session_id`, so a state object read under one key carried its old id when
+written under another. The env-key migration path (§6.3) is exactly that shape.
+`session_id` is now written last.
