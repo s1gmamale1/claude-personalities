@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { readState, writeState, clearState, pruneOlderThan } from '../lib/state.mjs';
-import { loadUniverses } from '../lib/characters.mjs';
+import { loadUniverses, aliasesOf } from '../lib/characters.mjs';
 import { detectSwitch } from '../lib/detect.mjs';
 import { buildContext, emit } from '../lib/inject.mjs';
 
@@ -53,7 +53,7 @@ function main() {
   for (const u of universes.values()) {
     targets.push(...(u.meta.commandAliases || []));
     for (const c of u.characters.values()) {
-      targets.push(c.meta.name, ...(c.meta.aliases || []));
+      targets.push(c.meta.name, ...aliasesOf(c));
     }
   }
 

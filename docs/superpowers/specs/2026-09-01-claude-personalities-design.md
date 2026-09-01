@@ -528,3 +528,24 @@ clause-final/filler rule.
 `session_id`, so a state object read under one key carried its old id when
 written under another. The env-key migration path (§6.3) is exactly that shape.
 `session_id` is now written last.
+
+### 12.1 Second review pass
+
+Two further defects, both on the "user adds their own universe" path — the
+extension story the plugin advertises, so both were reachable by design.
+
+**A scalar list value poisoned switch detection.** `aliases: abc` parsed to the
+string `"abc"`; spreading it produced `['a','b','c']`, putting the word "a" into
+the switch-detection target list, where it would match almost any sentence. One
+malformed community file could make detection fire constantly. Keys in
+`LIST_KEYS` (`aliases`, `suits`) are now always normalised to arrays, and
+`aliasesOf()` defends the consumers.
+
+**An empty Refusals section crashed the command.** `firstRefusal` indexed `[0]`
+of an empty array and called `.replace` on `undefined`, so `/personality` threw
+instead of degrading. It now falls back to a plain locked message.
+
+Also verified clean in this pass: empty, whitespace and undefined prompts; an
+unwritable state directory mid-turn; a missing `personalities/` directory;
+concurrent locks from two sessions; and duplicate character names across
+universes (correctly reported as ambiguous, resolvable with `universe:character`).

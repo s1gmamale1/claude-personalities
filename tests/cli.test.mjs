@@ -62,3 +62,24 @@ test('cli-run locks and reports status through the real entry point', async () =
   const again = JSON.parse(execFileSync('node', [runner, 'lock', 'leo'], { encoding: 'utf8', env }));
   assert.equal(again.status, 'refused');
 });
+
+test('a character with an empty Refusals section does not crash the command', async () => {
+  // Regression: firstRefusal indexed [0] of an empty array and called .replace
+  // on undefined, crashing /personality instead of degrading.
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join: j } = await import('node:path');
+
+  const root = mkdtempSync(j(tmpdir(), 'norefusal-'));
+  const dir = j(root, 'personalities', 'broken');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(j(dir, 'universe.json'), JSON.stringify({ id: 'broken', display: 'Broken' }));
+  writeFileSync(j(dir, 'empty.md'),
+    '---\nname: empty\ndisplay: Empty\nuniverse: broken\ncontinuity: "n/a"\naliases: [e]\ntagline: t\n---\n'
+    + '## Persistent core\nc\n## Voice\nv\n## Packaging\np\n## Lexicon\nl\n## Refusals\n\n## Calibration\nc\n');
+
+  assert.equal(lockOrRefuse({ sessionId: 'nr', query: 'empty', root }).status, 'locked');
+  const again = lockOrRefuse({ sessionId: 'nr', query: 'empty', root });
+  assert.equal(again.status, 'refused');
+  assert.match(again.message, /locked to Empty/);
+});

@@ -111,3 +111,24 @@ test('a broken universe.json skips only that universe', async () => {
   assert.ok(universes.has('testverse'), 'good universe still loads');
   assert.ok(!universes.has('busted'));
 });
+
+test('a scalar aliases value is normalised to an array, not spread into letters', () => {
+  // Regression: `aliases: abc` parsed to the string "abc", and spreading it gave
+  // ['a','b','c'] — putting the word "a" into the switch-detection target list.
+  const { meta } = parseFrontmatter('---\nname: x\naliases: abc\nsuits: solo\n---\nbody\n');
+  assert.deepEqual(meta.aliases, ['abc']);
+  assert.deepEqual(meta.suits, ['solo']);
+});
+
+test('an absent list value becomes an empty array', () => {
+  const { meta } = parseFrontmatter('---\nname: x\naliases:\n---\nbody\n');
+  assert.deepEqual(meta.aliases, []);
+});
+
+test('aliasesOf tolerates junk without producing junk targets', async () => {
+  const { aliasesOf } = await import('../lib/characters.mjs');
+  assert.deepEqual(aliasesOf({ meta: { aliases: 'abc' } }), []);
+  assert.deepEqual(aliasesOf({ meta: { aliases: ['ok', '', '  ', 7] } }), ['ok']);
+  assert.deepEqual(aliasesOf({ meta: {} }), []);
+  assert.deepEqual(aliasesOf(undefined), []);
+});
