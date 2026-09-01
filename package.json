@@ -1,0 +1,8 @@
+{
+  "name": "claude-personalities",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test tests/" },
+  "engines": { "node": ">=18" }
+}
