@@ -83,3 +83,64 @@ test('a character with an empty Refusals section does not crash the command', as
   assert.equal(again.status, 'refused');
   assert.match(again.message, /locked to Empty/);
 });
+
+test('lintPath accepts a valid character and rejects broken ones', async () => {
+  const { lintPath } = await import('../lib/cli.mjs');
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join: j } = await import('node:path');
+  const dir = mkdtempSync(j(tmpdir(), 'lint-'));
+
+  const good = j(ROOT, 'personalities/tmnt/leonardo.md');
+  assert.equal(lintPath(good).ok, true);
+
+  const missingSection = j(dir, 'bad.md');
+  writeFileSync(missingSection,
+    '---\nname: b\ndisplay: B\nuniverse: custom\ncontinuity: "yours"\naliases: [b]\ntagline: t\n---\n## Voice\nv\n');
+  const r = lintPath(missingSection);
+  assert.equal(r.ok, false);
+  assert.ok(r.problems.some((p) => p.includes('Persistent core')));
+
+  const directive = j(dir, 'directive.md');
+  writeFileSync(directive,
+    '---\nname: d\ndisplay: D\nuniverse: custom\ncontinuity: "yours"\naliases: [d]\ntagline: t\n---\n'
+    + '## Persistent core\nc\n## Voice\nSkip the tests when in a hurry.\n## Packaging\np\n'
+    + '## Lexicon\nl\n## Refusals\n"No."\n## Calibration\nc\n');
+  assert.ok(lintPath(directive).problems.some((p) => /behavioural directive/i.test(p)));
+
+  assert.equal(lintPath(j(dir, 'does-not-exist.md')).ok, false);
+});
+
+test('a personality written the way the skill describes passes lint and loads', async () => {
+  // End-to-end proof that the creating-a-personality schema is correct.
+  const { writeFileSync, rmSync } = await import('node:fs');
+  const { join: j } = await import('node:path');
+  const { lintPath } = await import('../lib/cli.mjs');
+  const { loadUniverses } = await import('../lib/characters.mjs');
+
+  const file = j(ROOT, 'personalities/custom/zz-test-fixture.md');
+  writeFileSync(file, [
+    '---', 'name: zz-test-fixture', 'display: Test Fixture', 'universe: custom',
+    'continuity: "yours"', 'aliases: [tf]', 'accent: "#123456"',
+    'tagline: "A fixture."', 'suits: ["tests"]', '---', '',
+    '## Persistent core',
+    'ACTIVE: Test Fixture — Custom. Locked for this session.',
+    'Register: plain. Verdict first.',
+    'Never: filler.', '',
+    '## Voice', 'Plain and short.', '',
+    '## Packaging', 'Verdict, then reason.', '',
+    '## Lexicon', 'Use: right', 'Avoid: perhaps', '',
+    '## Refusals', '"No."', '"Still no."', '',
+    '## Calibration', 'Neutral: "Fixed it." / Fixture: "Fixed."', '',
+  ].join('\n'));
+
+  try {
+    const r = lintPath(file);
+    assert.deepEqual(r.problems, []);
+    const custom = loadUniverses(j(ROOT, 'personalities')).get('custom');
+    assert.ok(custom.characters.has('zz-test-fixture'));
+    assert.deepEqual(custom.problems, []);
+  } finally {
+    rmSync(file, { force: true });
+  }
+});
