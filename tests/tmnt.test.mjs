@@ -64,3 +64,33 @@ test('shipped universes load with zero problems', () => {
     assert.deepEqual(u.problems, [], `${id} reported load problems`);
   }
 });
+
+test('every tmnt character has a Specialty within the cap', () => {
+  for (const [name, char] of tmnt.characters) {
+    const s = char.sections.Specialty;
+    assert.ok(s, `${name} has no Specialty`);
+    assert.ok(s.split('\n').length <= 10, `${name} Specialty too long`);
+  }
+});
+
+test('specialties are session-agnostic so they can become agent briefs', () => {
+  for (const [name, char] of tmnt.characters) {
+    assert.doesNotMatch(char.sections.Specialty, /this session|mid-session|locked/i, name);
+  }
+});
+
+test('suits lists match the specialisation spec', () => {
+  const expected = {
+    leonardo: ['planning', 'coordination', 'security', 'incident response', 'migrations'],
+    raphael: ['QA', 'testing', 'code review', 'debugging'],
+    donatello: ['architecture', 'backend', 'data modelling', 'performance'],
+    michelangelo: ['frontend', 'UX', 'copy', 'explaining things'],
+  };
+  for (const [name, suits] of Object.entries(expected)) {
+    assert.deepEqual(tmnt.characters.get(name).meta.suits, suits, name);
+  }
+});
+
+test("raphael's specialty forbids reporting a partial pass as a pass", () => {
+  assert.match(tmnt.characters.get('raphael').sections.Specialty, /partial pass|mostly working/i);
+});
