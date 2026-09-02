@@ -144,3 +144,38 @@ test('a personality written the way the skill describes passes lint and loads', 
     rmSync(file, { force: true });
   }
 });
+
+test('suggest ranks by literal domain overlap', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  const top = (q) => suggest(q, ROOT).ranked[0]?.character;
+  assert.equal(top('plan the migration steps'), 'leonardo');
+  assert.equal(top('write tests for this parser'), 'raphael');
+  assert.equal(top('design the database schema'), 'donatello');
+  assert.equal(top('improve the frontend copy'), 'michelangelo');
+});
+
+test('suggest reports which terms matched', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  const r = suggest('plan the migration steps', ROOT).ranked[0];
+  assert.ok(r.matched.includes('planning'));
+  assert.ok(r.matched.includes('migrations'));
+  assert.equal(r.score, 2);
+});
+
+test('suggest always returns the full roster, even with zero matches', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  // An empty result must never read as "no character fits" — the skill reasons
+  // over the roster when literal matching finds nothing, which is common.
+  const r = suggest('zzzz qqqq', ROOT);
+  assert.equal(r.matched, false);
+  assert.equal(r.ranked.length, 0);
+  assert.ok(r.roster.length >= 4);
+  assert.ok(r.roster.every((c) => Array.isArray(c.suits)));
+});
+
+test('suggest tolerates empty input', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  for (const q of ['', '   ', undefined]) {
+    assert.equal(suggest(q, ROOT).matched, false);
+  }
+});
