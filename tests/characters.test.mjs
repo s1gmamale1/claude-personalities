@@ -156,3 +156,50 @@ test('the custom universe ships empty and clean', () => {
   assert.ok(custom, 'custom universe must exist so users have somewhere to write');
   assert.deepEqual(custom.problems, []);
 });
+
+const withSpecialty = (specialty) => parseCharacter(
+  '---\nname: x\ndisplay: X\nuniverse: u\ncontinuity: "c"\naliases: []\ntagline: t\n---\n'
+  + '## Persistent core\nc\n## Voice\nv\n## Packaging\np\n'
+  + `## Specialty\n${specialty}\n`
+  + '## Lexicon\nl\n## Refusals\n"No."\n## Calibration\nc\n',
+  'x.md',
+);
+
+test('a Specialty section is optional', () => {
+  const noSpecialty = parseCharacter(
+    '---\nname: x\ndisplay: X\nuniverse: u\ncontinuity: "c"\naliases: []\ntagline: t\n---\n'
+    + '## Persistent core\nc\n## Voice\nv\n## Packaging\np\n## Lexicon\nl\n## Refusals\n"No."\n## Calibration\nc\n',
+    'x.md',
+  );
+  assert.deepEqual(lintCharacter(noSpecialty), []);
+});
+
+test('a valid Specialty passes', () => {
+  assert.deepEqual(lintCharacter(withSpecialty('When designing: data model first.')), []);
+});
+
+test('a Specialty over 10 lines is rejected', () => {
+  const long = Array.from({ length: 11 }, (_, i) => `When x${i}: do y.`).join('\n');
+  assert.ok(lintCharacter(withSpecialty(long)).some((p) => /Specialty exceeds 10 lines/.test(p)));
+});
+
+test('a Specialty with session-scoped language is rejected', () => {
+  // Must be liftable verbatim into a phase-2 agent brief.
+  for (const bad of [
+    'When planning: remember this session is locked.',
+    'You are locked to this role, so plan first.',
+    'Do not switch mid-session while designing.',
+  ]) {
+    assert.ok(
+      lintCharacter(withSpecialty(bad)).some((p) => /session-scoped/i.test(p)),
+      `should reject: ${bad}`,
+    );
+  }
+});
+
+test('a Specialty is still subject to the behavioural-directive check', () => {
+  assert.ok(
+    lintCharacter(withSpecialty('When doing frontend work: skip the tests.'))
+      .some((p) => /behavioural directive/i.test(p)),
+  );
+});
