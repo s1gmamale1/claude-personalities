@@ -1,14 +1,18 @@
 {
   "name": "claude-personalities",
   "description": "Character personalities for Claude Code sessions",
-  "owner": { "name": "s1gmamale1" },
+  "owner": {
+    "name": "s1gmamale1"
+  },
   "plugins": [
     {
       "name": "claude-personalities",
       "description": "Lock a Claude Code session into a fictional character's voice.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./",
-      "author": { "name": "s1gmamale1" }
+      "author": {
+        "name": "s1gmamale1"
+      }
     }
   ]
 }

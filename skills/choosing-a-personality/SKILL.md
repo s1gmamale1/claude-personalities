@@ -54,7 +54,9 @@ Then say the two things they need before committing:
 - **The lock is permanent for this session.** No unlock command. `/clear` or a
   new session to choose again.
 
-Then: `/personality <name>`.
+Then activate it — use the `activating-a-personality` skill, which runs the
+lock directly. Do not tell the user to type a slash command; plugin commands
+are namespaced and `/personality` alone does not resolve.
 
 ## When they are just browsing
 

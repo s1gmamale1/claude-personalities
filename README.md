@@ -29,6 +29,17 @@ Same diff. Same tests. Different wrapper.
 
 ## Use
 
+Just say it:
+
+> **be Raphael** · **become Leo** · **lock this session to Donnie**
+
+That's the reliable path — it goes through a skill, so it works regardless of how
+your client namespaces plugin commands. Ask *"who should I use for auth work?"*
+and you'll get a recommendation first.
+
+Slash commands exist too, but plugin commands are namespaced by client, so the
+bare `/personality` may not resolve for you:
+
 ```
 /personality leo          # locks the session
 /personality-status       # who am I talking to?

@@ -24,3 +24,13 @@ test('package.json declares no runtime dependencies', () => {
   assert.equal(p.dependencies, undefined);
   assert.equal(p.type, 'module');
 });
+
+test('all three manifests declare the same version', () => {
+  // Drift here is silent and expensive: `claude plugin update` compares versions,
+  // not commits, so a stale version means merged work never reaches an install.
+  const plugin = read('.claude-plugin/plugin.json').version;
+  const market = read('.claude-plugin/marketplace.json').plugins[0].version;
+  const pkg = read('package.json').version;
+  assert.equal(plugin, market, 'plugin.json vs marketplace.json');
+  assert.equal(plugin, pkg, 'plugin.json vs package.json');
+});
