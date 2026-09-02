@@ -179,3 +179,20 @@ test('suggest tolerates empty input', async () => {
     assert.equal(suggest(q, ROOT).matched, false);
   }
 });
+
+test('status reports the active specialty', async () => {
+  const { status: st, lockOrRefuse: lock } = await import('../lib/cli.mjs');
+  lock({ sessionId: 'spec-status', query: 'donnie', root: ROOT });
+  const s = st('spec-status', ROOT);
+  assert.equal(s.character, 'donatello');
+  assert.match(s.specialty, /tradeoff/i);
+  assert.ok(s.suits.includes('architecture'));
+});
+
+test('status still works without a root argument', async () => {
+  const { status: st, lockOrRefuse: lock } = await import('../lib/cli.mjs');
+  lock({ sessionId: 'no-root', query: 'leo', root: ROOT });
+  const s = st('no-root');
+  assert.equal(s.locked, true);
+  assert.equal(s.specialty, undefined);   // no root, no file read — must not throw
+});

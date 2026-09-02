@@ -26,7 +26,8 @@ has a personality, creating a new one is fine — activating it is not.
 
 ## The interview
 
-Ask these **one at a time**. Six questions, in this order. The order matters:
+Ask these **one at a time**. Seven questions, in this order — the seventh is
+optional and often skipped. The order matters:
 people describe characters top-down (who they are) but the file needs the
 mechanical details, and asking for those cold produces blank stares.
 
@@ -144,8 +145,9 @@ suits: ["<kinds of work they fit>"]
 `aliases` and `suits` must be bracketed lists even with one item. A bare value
 (`aliases: bob`) is normalised, but write the brackets.
 
-Then the six sections in this order: `## Persistent core`, `## Voice`,
-`## Packaging`, `## Lexicon`, `## Refusals`, `## Calibration`.
+Then the sections in this order: `## Persistent core`, `## Voice`,
+`## Packaging`, `## Specialty` (omit if question 7 was skipped), `## Lexicon`,
+`## Refusals`, `## Calibration`.
 
 ## Verify before you claim it worked
 
