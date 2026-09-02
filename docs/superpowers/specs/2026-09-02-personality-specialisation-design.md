@@ -211,24 +211,41 @@ install testing, new entry points should be skills.
 Backed by code so it is deterministic and testable:
 
 ```
-node lib/cli-run.mjs suggest "add rate limiting to the login endpoint"
-→ leonardo   (matched: security, backend)   ← recommended
-  donatello  (matched: backend)
-  raphael    (matched: testing)
+node lib/cli-run.mjs suggest "plan the migration steps"
+→ leonardo   (matched: planning, migrations)   ← recommended
+  { roster: all characters with their domains }
 ```
 
 Exact algorithm, so it is reproducible:
 
 1. Lowercase the task text and split it on non-alphanumeric characters.
-2. For each character with a `suits` list, an entry matches when **any** of its
-   words of length ≥ 3 appears in that token set (`"incident response"` matches
-   a task mentioning "incident").
-3. Score = number of matching entries. Ties break by roster order, which is
-   stable across runs.
-4. Return every character with score > 0, ranked, each with its matched terms.
+2. Reduce every word of ≥ 4 characters to its first 4 characters; shorter words
+   compare exactly. This is a deliberately crude stemmer that makes
+   `testing`/`tests`, `planning`/`plan` and `data`/`database` match without
+   pulling in a stemming dependency.
+3. A `suits` entry matches when any of its stemmed words matches a stemmed task
+   token.
+4. Score = number of matching entries. Ties break by roster order; `Array#sort`
+   is stable, so this is deterministic.
+5. Return matches ranked, **plus the full roster with every character's domains**.
 
-`suits` remains **optional** frontmatter. A character without it simply never
-scores and is listed under "no stated specialty" rather than being hidden.
+### 7.1 What the matcher deliberately cannot do
+
+String matching cannot get from "login endpoint" to `security`, or from "make
+the empty state nicer" to `frontend`. That is semantics, and no amount of
+stemming fixes it.
+
+So the division of labour is explicit: **code supplies facts, the skill supplies
+judgement.** `suggest` returns literal matches when they exist *and always
+returns the full roster with domains*. When there are no literal matches — which
+will be common — the skill reasons over the roster itself, which is the thing
+models are good at and string matchers are not.
+
+This is why the output includes the roster unconditionally rather than only on
+an empty match. An empty result must never be read as "no character fits".
+
+`suits` remains **optional** frontmatter. A character without it never scores and
+appears in the roster under "no stated specialty" rather than being hidden.
 - No match → say so and tell the user to pick by vibe. Never manufacture a
   rationale.
 - Keyword matching is acceptable here where it was not for switch detection: a
@@ -283,10 +300,12 @@ Enforced by the linter: a Specialty containing session-scoped language fails.
 4. **Floor** — contains the additive-only clause and the note-once rule.
 5. **Injection** — a locked turn contains the Specialty text; a character
    without one injects the core alone and does not crash.
-6. **`suggest` ranking** — "add rate limiting to the login endpoint" ranks
-   leonardo first; "make the empty state nicer" ranks michelangelo first; "write
-   tests for this parser" ranks raphael first; gibberish returns no match with
-   the pick-by-vibe message.
+6. **`suggest` ranking**, using cases that literal matching can actually serve:
+   "plan the migration steps" ranks leonardo first (planning, migrations);
+   "write tests for this parser" ranks raphael first (testing, via the 4-char
+   stem); "design the database schema" ranks donatello first (data modelling);
+   "improve the frontend copy" ranks michelangelo first (frontend, copy).
+   Gibberish returns zero matches **and still returns the full roster**.
 
 ## 11. Out of scope
 
