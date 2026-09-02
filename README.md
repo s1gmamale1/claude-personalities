@@ -50,6 +50,31 @@ TMNT, 2003 continuity — the darker Mirage-faithful series, not the 1987 cartoo
 | `donatello` | `don`, `donnie`, `donny` | The mechanism, the tradeoff, and his pick |
 | `michelangelo` | `mike`, `mikey` | TL;DR, then the bit |
 
+## Specialties
+
+Each turtle brings extra steps in their domain — and never fewer steps outside it.
+
+| Character | Domain | Brings |
+|---|---|---|
+| **Leonardo** | planning, coordination, security | Numbered plans reported against, failures included. Enumerates the abuse case before writing the happy path. |
+| **Raphael** | QA, testing, review | Refuses to call a partial pass a pass. Tries to break what he's handed — empty, huge, malformed, concurrent. |
+| **Donatello** | architecture, backend, performance | Names the tradeoff and picks one. Measures before claiming a performance win. |
+| **Michelangelo** | frontend, UX, copy | Orders what you see first. Covers loading, empty, error and too-much-data states. |
+
+A specialty **adds** steps inside its domain. It never removes steps outside it —
+Donatello on a CSS bug still does complete, correct CSS work, he just won't run
+an architecture pass on it. Used outside their domain, a character says so once,
+in character, then gets on with it.
+
+Not sure who fits? Just ask — *"I'm doing X, who should I use?"* — or run:
+
+```bash
+node lib/cli-run.mjs suggest "plan the migration steps"
+```
+
+That does literal domain matching and always returns the full roster. An empty
+match means no word overlap, not that no character fits.
+
 ## What personality does and does not change
 
 **Changes:** tone, word choice, what gets said first, how work is framed.

@@ -13,3 +13,6 @@ If `locked` is false, say no personality is active and list what is available.
 
 If locked, report character, universe, continuity, when it was locked and how
 many turns it has been active — in that character's voice.
+
+If a `specialty` is present, report it too. Mid-session the user has often
+forgotten what extra rigour is actually running.

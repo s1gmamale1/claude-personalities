@@ -144,3 +144,64 @@ test('a personality written the way the skill describes passes lint and loads', 
     rmSync(file, { force: true });
   }
 });
+
+test('suggest ranks by literal domain overlap', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  const top = (q) => suggest(q, ROOT).ranked[0]?.character;
+  assert.equal(top('plan the migration steps'), 'leonardo');
+  assert.equal(top('write tests for this parser'), 'raphael');
+  assert.equal(top('design the database schema'), 'donatello');
+  assert.equal(top('improve the frontend copy'), 'michelangelo');
+});
+
+test('suggest reports which terms matched', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  const r = suggest('plan the migration steps', ROOT).ranked[0];
+  assert.ok(r.matched.includes('planning'));
+  assert.ok(r.matched.includes('migrations'));
+  assert.equal(r.score, 2);
+});
+
+test('suggest always returns the full roster, even with zero matches', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  // An empty result must never read as "no character fits" — the skill reasons
+  // over the roster when literal matching finds nothing, which is common.
+  const r = suggest('zzzz qqqq', ROOT);
+  assert.equal(r.matched, false);
+  assert.equal(r.ranked.length, 0);
+  assert.ok(r.roster.length >= 4);
+  assert.ok(r.roster.every((c) => Array.isArray(c.suits)));
+});
+
+test('suggest tolerates empty input', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  for (const q of ['', '   ', undefined]) {
+    assert.equal(suggest(q, ROOT).matched, false);
+  }
+});
+
+test('status reports the active specialty', async () => {
+  const { status: st, lockOrRefuse: lock } = await import('../lib/cli.mjs');
+  lock({ sessionId: 'spec-status', query: 'donnie', root: ROOT });
+  const s = st('spec-status', ROOT);
+  assert.equal(s.character, 'donatello');
+  assert.match(s.specialty, /tradeoff/i);
+  assert.ok(s.suits.includes('architecture'));
+});
+
+test('status still works without a root argument', async () => {
+  const { status: st, lockOrRefuse: lock } = await import('../lib/cli.mjs');
+  lock({ sessionId: 'no-root', query: 'leo', root: ROOT });
+  const s = st('no-root');
+  assert.equal(s.locked, true);
+  assert.equal(s.specialty, undefined);   // no root, no file read — must not throw
+});
+
+test('suggest returns empty rather than throwing without a root', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  for (const bad of [null, undefined, '']) {
+    const r = suggest('testing', bad);
+    assert.equal(r.matched, false);
+    assert.deepEqual(r.roster, []);
+  }
+});

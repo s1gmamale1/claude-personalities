@@ -26,7 +26,8 @@ has a personality, creating a new one is fine — activating it is not.
 
 ## The interview
 
-Ask these **one at a time**. Six questions, in this order. The order matters:
+Ask these **one at a time**. Seven questions, in this order — the seventh is
+optional and often skipped. The order matters:
 people describe characters top-down (who they are) but the file needs the
 mechanical details, and asking for those cold produces blank stares.
 
@@ -61,6 +62,14 @@ but lean on the negatives.
 pleasant assistant? Impatience, arrogance, over-explaining, deflecting with
 jokes, excessive formality. A personality with no rough edge reads as nothing.
 
+**7. Specialty — optional.** What should they be especially good at, and what
+extra steps do they bring there? "Nothing, just the voice" is a perfectly good
+answer; skip the section entirely if they say that.
+
+If they do answer, get *concrete steps*, not adjectives. "Good at security" is
+useless; "enumerates the abuse case before writing the happy path" is a rule
+that changes behaviour. Push for the second kind.
+
 ## What you generate
 
 The user does not supply these. Draft them, then show all three for approval
@@ -79,6 +88,22 @@ is the section users never think of and it's the one they'll see most.
 **`## Calibration`** — three before/after pairs. Take a neutral line ("I found
 the bug — a race condition. Fixing it now.") and rewrite it as this character.
 Pairs teach the voice far better than adjectives do.
+
+**`## Specialty`** — only if they answered question 7. At most 10 lines, written
+as **trigger → action** pairs: "When touching auth, enumerate the abuse case
+before writing the happy path." That phrasing is what lets the rule fire only
+when relevant, with no code deciding what the task is.
+
+Two hard rules for this section:
+
+- **Session-agnostic.** No "this session", no "you are locked", no reference to
+  the lock. The linter rejects them. The reason is forward-looking: a Specialty
+  block must be liftable verbatim into a dispatchable agent's brief later.
+- **Additive only.** A specialty adds steps in its domain. It never licenses
+  doing less anywhere. "For quick frontend jobs, skip the tests" is rejected.
+
+Also set `suits:` in the frontmatter to the domains it covers — that list is
+what the recommender matches against.
 
 ## Hard constraints
 
@@ -120,8 +145,9 @@ suits: ["<kinds of work they fit>"]
 `aliases` and `suits` must be bracketed lists even with one item. A bare value
 (`aliases: bob`) is normalised, but write the brackets.
 
-Then the six sections in this order: `## Persistent core`, `## Voice`,
-`## Packaging`, `## Lexicon`, `## Refusals`, `## Calibration`.
+Then the sections in this order: `## Persistent core`, `## Voice`,
+`## Packaging`, `## Specialty` (omit if question 7 was skipped), `## Lexicon`,
+`## Refusals`, `## Calibration`.
 
 ## Verify before you claim it worked
 
@@ -140,6 +166,8 @@ re-run until it passes. Common failures:
 | `## Persistent core exceeds 15 lines` | Compress it; it ships on every turn |
 | `behavioural directive found` | A line tells Claude how to work, not how to sound |
 | `missing frontmatter key: X` | Add it; all listed keys are required |
+| `## Specialty exceeds 10 lines` | Tighten the prose — do not drop rules, compress them |
+| `contains session-scoped language` | A Specialty line mentions the session or the lock; rewrite it standalone |
 
 Then confirm the loader sees it:
 
