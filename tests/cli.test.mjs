@@ -196,3 +196,12 @@ test('status still works without a root argument', async () => {
   assert.equal(s.locked, true);
   assert.equal(s.specialty, undefined);   // no root, no file read — must not throw
 });
+
+test('suggest returns empty rather than throwing without a root', async () => {
+  const { suggest } = await import('../lib/cli.mjs');
+  for (const bad of [null, undefined, '']) {
+    const r = suggest('testing', bad);
+    assert.equal(r.matched, false);
+    assert.deepEqual(r.roster, []);
+  }
+});

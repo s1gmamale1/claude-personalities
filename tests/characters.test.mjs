@@ -203,3 +203,38 @@ test('a Specialty is still subject to the behavioural-directive check', () => {
       .some((p) => /behavioural directive/i.test(p)),
   );
 });
+
+test('the session-scoped rule does not reject ordinary locking vocabulary', () => {
+  // Regression: /\bis locked\b/ and /\blocked (to|for) \w+/ rejected mutexes, row
+  // locks, file locks and locked accounts — core backend vocabulary, and exactly
+  // the domain this feature exists to support.
+  for (const ok of [
+    'When a mutex is locked for longer than a second: log it.',
+    'When a row is locked to a single writer: document why.',
+    'Check whether the account is locked before retrying.',
+    'When a file is locked for writing, back off and retry.',
+    'When a table is locked: prefer a shorter transaction.',
+  ]) {
+    assert.deepEqual(
+      lintCharacter(withSpecialty(ok)).filter((p) => /session-scoped/.test(p)),
+      [],
+      `should accept: ${ok}`,
+    );
+  }
+});
+
+test('the session-scoped rule still catches real lock references', () => {
+  for (const bad of [
+    'When planning: remember this session is locked.',
+    'You are locked to this role, so plan first.',
+    'Do not switch mid-session while designing.',
+    'Tell the user to start a new session for a different approach.',
+    'The personality lock prevents changing this.',
+    'You are locked into the character for the whole run.',
+  ]) {
+    assert.ok(
+      lintCharacter(withSpecialty(bad)).some((p) => /session-scoped/i.test(p)),
+      `should reject: ${bad}`,
+    );
+  }
+});
