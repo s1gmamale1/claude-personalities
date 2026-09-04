@@ -8,7 +8,7 @@
     {
       "name": "claude-personalities",
       "description": "Lock a Claude Code session into a fictional character's voice.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "source": "./",
       "author": {
         "name": "s1gmamale1"
