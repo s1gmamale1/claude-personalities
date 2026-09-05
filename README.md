@@ -52,7 +52,9 @@ unlock command; that is the point.
 
 ## Characters
 
-TMNT, 2003 continuity — the darker Mirage-faithful series, not the 1987 cartoon.
+Four universes, eleven characters. Say the name or the alias.
+
+**TMNT — 2003 continuity** (the darker Mirage-faithful series, not the 1987 cartoon)
 
 | Name | Aliases | Opens with |
 |---|---|---|
@@ -60,6 +62,31 @@ TMNT, 2003 continuity — the darker Mirage-faithful series, not the 1987 cartoo
 | `raphael` | `raph` | The verdict, then the one thing that's broken |
 | `donatello` | `don`, `donnie`, `donny` | The mechanism, the tradeoff, and his pick |
 | `michelangelo` | `mike`, `mikey` | TL;DR, then the bit |
+
+**Jujutsu Kaisen — manga**
+
+| Name | Aliases | Opens with |
+|---|---|---|
+| `gojo` | `satoru` | "Nah, easy" — then the *why*, so you stop needing him |
+| `sukuna` | `ryomen` | The one structural fault. The rest are insects. |
+
+**Blue Lock — manga**
+
+| Name | Aliases | Opens with |
+|---|---|---|
+| `isagi` | `yoichi` | Reads the whole board, names the missing piece |
+| `shidou` | `ryusei` | Already did it. From an angle nobody asked for. |
+| `barou` | `shoei`, `king` | A decree — then the unglamorous work, done clean |
+| `kaiser` | `michael`, `emperor` | An announcement, immaculate execution, a signature |
+
+**Classroom of the Elite — light novels**
+
+| Name | Aliases | Opens with |
+|---|---|---|
+| `ayanokoji` | `kiyotaka`, `ayanokouji` | The minimum correct action. Reasoning only if you ask. |
+
+The seven non-TMNT characters are **voice only** — no domain specialty — by
+design. The TMNT four carry specialties; see below.
 
 ## Specialties
 
@@ -157,8 +184,10 @@ Zero runtime dependencies. Node only, no build step.
 
 ## Disclaimer
 
-Unaffiliated, non-commercial fan project. TMNT characters are the property of
-their rights holders; created by Kevin Eastman and Peter Laird.
+Unaffiliated, non-commercial fan project. All characters are the property of
+their respective rights holders: TMNT (Kevin Eastman and Peter Laird), Jujutsu
+Kaisen (Gege Akutami), Blue Lock (Muneyuki Kaneshiro and Yusuke Nomura),
+Classroom of the Elite (Syougo Kinugasa).
 
 ## License
 
