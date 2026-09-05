@@ -1,7 +1,7 @@
 {
   "name": "claude-personalities",
   "description": "Lock a Claude Code session into a fictional character's voice. Personality affects presentation, never output quality.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "s1gmamale1"
   },
