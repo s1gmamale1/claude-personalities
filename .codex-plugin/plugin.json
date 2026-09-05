@@ -1,0 +1,40 @@
+{
+  "name": "claude-personalities",
+  "version": "0.4.0",
+  "description": "Lock a coding-agent session into a fictional character's voice. Personality affects presentation, never output quality.",
+  "author": {
+    "name": "s1gmamale1"
+  },
+  "homepage": "https://github.com/s1gmamale1/claude-personalities",
+  "repository": "https://github.com/s1gmamale1/claude-personalities",
+  "license": "MIT",
+  "keywords": [
+    "personality",
+    "character",
+    "voice",
+    "roleplay",
+    "tmnt",
+    "jujutsu-kaisen",
+    "blue-lock",
+    "classroom-of-the-elite"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Personalities",
+    "shortDescription": "Give your session a character's voice \u2014 locked in until the session ends",
+    "longDescription": "Say 'be Raphael' and the session adopts that character's voice and framing for the rest of the conversation. Switching is refused in character. Personality never changes which tools run, whether tests are written, or how honestly failure is reported.",
+    "developerName": "s1gmamale1",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "be Raphael",
+      "who should I use for this task?"
+    ],
+    "websiteURL": "https://github.com/s1gmamale1/claude-personalities"
+  }
+}

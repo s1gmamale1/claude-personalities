@@ -22,10 +22,31 @@ Same diff. Same tests. Different wrapper.
 
 ## Install
 
+**Claude Code**
+
 ```
 /plugin marketplace add s1gmamale1/claude-personalities
 /plugin install claude-personalities
 ```
+
+**Codex CLI** (0.150+)
+
+```
+codex plugin marketplace add s1gmamale1/claude-personalities
+codex plugin add claude-personalities@claude-personalities
+```
+
+Then, in an interactive Codex session, run **`/hooks`** and trust this plugin's
+two hooks. Codex requires an explicit trust review before it will run any
+non-managed hook — without that step the personality lock is silently inert.
+Skills work immediately; only the hooks need the review.
+
+Codex speaks the same hook protocol as Claude Code, so the same `hooks.json`
+and the same guard script serve both. One difference: Codex exposes no
+session-id variable to commands, so on Codex the lock is written as *pending*
+and adopted by the hook on your next message. If you activate two personalities
+in two Codex threads within two minutes of each other, the first thread to send
+a message claims the first lock — a narrow race, documented rather than hidden.
 
 ## Use
 
@@ -180,7 +201,9 @@ persistent core at 15 lines, and rejects behavioural directives.
   deliberately **not** on `compact` or `resume`, which would silently drop your
   personality in exactly the long sessions where it matters.
 
-Zero runtime dependencies. Node only, no build step.
+Zero runtime dependencies. Node only, no build step. Works in Claude Code and
+Codex CLI from the same files — both hosts implement the same hook protocol
+and set `CLAUDE_PLUGIN_ROOT`.
 
 ## Disclaimer
 

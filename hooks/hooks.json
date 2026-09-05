@@ -6,8 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/personality-guard.mjs\"",
-            "timeout": 5000
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/personality-guard.mjs\""
           }
         ]
       }
@@ -17,8 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/personality-guard.mjs\"",
-            "timeout": 5000
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/personality-guard.mjs\""
           }
         ]
       }

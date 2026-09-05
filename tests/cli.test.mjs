@@ -205,3 +205,49 @@ test('suggest returns empty rather than throwing without a root', async () => {
     assert.deepEqual(r.roster, []);
   }
 });
+
+test('lock without a session id writes a pending lock instead of a shared key', async () => {
+  const { lockOrRefuse: lock, PENDING_KEY } = await import('../lib/cli.mjs');
+  const { readState } = await import('../lib/state.mjs');
+  const r = lock({ sessionId: undefined, query: 'leo', root: ROOT });
+  assert.equal(r.status, 'locked');
+  const p = readState(PENDING_KEY);
+  assert.ok(p, 'pending lock written');
+  assert.equal(p.character, 'leonardo');
+  assert.ok(p.locked_at);
+});
+
+test('a stale pending lock does not refuse a fresh lock', async () => {
+  const { lockOrRefuse: lock, PENDING_KEY } = await import('../lib/cli.mjs');
+  const { writeState } = await import('../lib/state.mjs');
+  const old = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  writeState(PENDING_KEY, { universe: 'tmnt', character: 'raphael', locked_at: old });
+  const r = lock({ sessionId: undefined, query: 'mikey', root: ROOT });
+  assert.equal(r.status, 'locked', 'stale pending must be overwritten, not enforced');
+});
+
+test('status without a session id reports the most recent lock and says so', async () => {
+  const { lockOrRefuse: lock, status: st } = await import('../lib/cli.mjs');
+  const { clearState } = await import('../lib/state.mjs');
+  clearState('_pending');   // a fresh pending lock would (correctly) take precedence
+  lock({ sessionId: 'older', query: 'leo', root: ROOT });
+  await new Promise((r) => setTimeout(r, 20));
+  lock({ sessionId: 'newer', query: 'donnie', root: ROOT });
+  const s = st(undefined, ROOT);
+  assert.equal(s.locked, true);
+  assert.equal(s.character, 'donatello');
+  assert.equal(s.resolved_by, 'most-recent');
+});
+
+test('status reports a fresh pending lock before any hook has adopted it', async () => {
+  // Regression: on Codex, "be Raph" then "who am I talking to?" answered
+  // "nobody" until the next turn's hook re-keyed the pending lock.
+  const { lockOrRefuse: lock, status: st } = await import('../lib/cli.mjs');
+  const { clearState } = await import('../lib/state.mjs');
+  clearState('_pending');
+  lock({ sessionId: undefined, query: 'raph', root: ROOT });
+  const s = st(undefined, ROOT);
+  assert.equal(s.locked, true);
+  assert.equal(s.character, 'raphael');
+  assert.equal(s.resolved_by, 'pending');
+});

@@ -86,3 +86,41 @@ test('turn counter increments across prompts', () => {
   run({ session_id: 'count', hook_event_name: 'UserPromptSubmit', prompt: 'b' });
   assert.equal(readState('count').turns, 2);
 });
+
+test('adopts a fresh pending lock when the CLI had no session id (Codex path)', () => {
+  // Codex exports no session-id env var to commands, so the CLI writes to a
+  // _pending key. The guard — which always knows the real id — adopts it once.
+  writeState('_pending', { universe: 'tmnt', character: 'leonardo', turns: 0, locked_at: new Date().toISOString() });
+  const out = run({ session_id: 'codex-thread-1', hook_event_name: 'UserPromptSubmit', prompt: 'hi' });
+  assert.match(JSON.parse(out).hookSpecificOutput.additionalContext, /Leonardo/);
+  assert.equal(readState('_pending'), null, 'pending lock consumed');
+  assert.ok(readState('codex-thread-1'), 'lock re-keyed to the real session');
+});
+
+test('ignores a stale pending lock', () => {
+  // A pending lock nobody adopted within the window is someone else's leftover,
+  // not this session's intent.
+  const old = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  writeState('_pending', { universe: 'tmnt', character: 'raphael', turns: 0, locked_at: old });
+  const out = run({ session_id: 'codex-thread-2', hook_event_name: 'UserPromptSubmit', prompt: 'hi' });
+  assert.equal(out.trim(), '', 'stale pending must not activate a personality');
+  assert.equal(readState('codex-thread-2'), null);
+});
+
+test('a real session lock takes priority over a pending one', () => {
+  writeState('has-lock', { universe: 'tmnt', character: 'michelangelo', turns: 0 });
+  writeState('_pending', { universe: 'tmnt', character: 'leonardo', turns: 0, locked_at: new Date().toISOString() });
+  const out = run({ session_id: 'has-lock', hook_event_name: 'UserPromptSubmit', prompt: 'hi' });
+  assert.match(JSON.parse(out).hookSpecificOutput.additionalContext, /Michelangelo/);
+  assert.ok(readState('_pending'), 'pending left alone for whichever session it was meant for');
+});
+
+test('falls back to PLUGIN_ROOT when CLAUDE_PLUGIN_ROOT is unset', () => {
+  writeState('proot', { universe: 'tmnt', character: 'donatello', turns: 0 });
+  const out = execFileSync('node', [GUARD], {
+    input: JSON.stringify({ session_id: 'proot', hook_event_name: 'UserPromptSubmit', prompt: 'hi' }),
+    encoding: 'utf8',
+    env: { ...process.env, PERSONALITY_STATE_DIR: dir, CLAUDE_PLUGIN_ROOT: '', PLUGIN_ROOT: REPO, COPILOT_CLI: '', CLAUDE_CODE_SESSION_ID: '' },
+  });
+  assert.match(JSON.parse(out).hookSpecificOutput.additionalContext, /Donatello/);
+});
