@@ -40,6 +40,7 @@ test('emit produces the Claude Code envelope when CLAUDE_PLUGIN_ROOT is set', ()
 
 test('emit falls back to the SDK-standard field elsewhere', () => {
   delete process.env.CLAUDE_PLUGIN_ROOT;
+  delete process.env.PLUGIN_ROOT;
   const out = JSON.parse(emit('UserPromptSubmit', 'hello'));
   assert.equal(out.additionalContext, 'hello');
   assert.equal(out.hookSpecificOutput, undefined);
@@ -69,4 +70,13 @@ test('a character with no specialty injects the core alone and does not crash', 
   const ctx = buildContext({ character, universe, switchAttempt: false });
   assert.ok(ctx.includes('ACTIVE: Leonardo.'));
   assert.ok(!/Specialty:/.test(ctx));
+});
+
+test('emit uses the hookSpecificOutput envelope when only PLUGIN_ROOT is set', () => {
+  delete process.env.CLAUDE_PLUGIN_ROOT;
+  process.env.PLUGIN_ROOT = '/tmp/x';
+  delete process.env.COPILOT_CLI;
+  const out = JSON.parse(emit('UserPromptSubmit', 'hello'));
+  assert.equal(out.hookSpecificOutput.additionalContext, 'hello');
+  delete process.env.PLUGIN_ROOT;
 });

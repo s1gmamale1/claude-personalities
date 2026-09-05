@@ -13,7 +13,10 @@
 
 # Local agent/runtime state — not part of the plugin
 .swarm/
-.agents/
+.agents/*
+!.agents/plugins/
+.agents/plugins/*
+!.agents/plugins/marketplace.json
 .sigmamemory/
 .claude-flow/
 .cursor/

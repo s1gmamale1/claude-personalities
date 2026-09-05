@@ -6,8 +6,11 @@ import { readState, writeState, clearState, pruneOlderThan } from '../lib/state.
 import { loadUniverses, aliasesOf } from '../lib/characters.mjs';
 import { detectSwitch } from '../lib/detect.mjs';
 import { buildContext, emit } from '../lib/inject.mjs';
+import { PENDING_KEY, isFreshPending } from '../lib/cli.mjs';
 
+// Claude Code sets CLAUDE_PLUGIN_ROOT; Codex sets both it and PLUGIN_ROOT.
 const ROOT = process.env.CLAUDE_PLUGIN_ROOT
+  || process.env.PLUGIN_ROOT
   || dirname(dirname(fileURLToPath(import.meta.url)));
 
 function readStdin() {
@@ -40,6 +43,16 @@ function main() {
       clearState(envId);
       writeState(input.session_id, migrated);
       state = migrated;
+    }
+  }
+  // Codex exports no session-id env var to commands, so the CLI writes a
+  // pending lock. Adopt it once if it is fresh; a stale one is a leftover.
+  if (!state) {
+    const pending = readState(PENDING_KEY);
+    if (pending && isFreshPending(pending)) {
+      clearState(PENDING_KEY);
+      writeState(input.session_id, pending);
+      state = pending;
     }
   }
   if (!state) return;                                   // inert by default
